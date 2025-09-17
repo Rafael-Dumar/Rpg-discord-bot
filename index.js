@@ -4,6 +4,8 @@ import { Client, Events, GatewayIntentBits, Collection, EmbedBuilder} from 'disc
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { monsterCache } from './util/monsterCache.js';
+
 
 const client = new Client({
     intents: [
@@ -17,6 +19,7 @@ const client = new Client({
 
 const activeCombats = new Map();
 
+//CARREGADOR DE COMANDOS
 client.commands = new Collection();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,69 +32,30 @@ for (const file of commandFiles) {
     const {default: command} = await import(fileUrl);
     client.commands.set(command.data.name, command);
 }
+//CARREGADOR DE EVENTOS
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
+for (const file of eventFiles) {
+    const filePath = path.join(eventsPath, file);
+    const fileUrl = pathToFileURL(filePath);
+    const { default: event } = await import(fileUrl);
 
-client.once(Events.ClientReady, readyClient => {
-    console.log(`o bot esta online como ${readyClient.user.tag}`)
-})
-
-client.on(Events.InteractionCreate, async interaction => {
-    // se a interação for um comando de barra
-    if (interaction.isChatInputCommand()) {
-        const command = interaction.client.commands.get(interaction.commandName);
-        if (!command) {
-            console.error(`Nenhum comando correspondente a ${interaction.commandName} foi encontrado.`);
-            return;
-        }
-
-        try{
-            await command.execute(interaction, activeCombats);
-        } catch(error) {
-            console.error(error);
-            await interaction.reply({content: 'Ocorreu um erro ao executar esse comando.', ephemeral: true});
-        }
+    // Passamos o mapa 'activeCombats' para os eventos que precisam dele
+    if (event.once) {
+        client.once(event.name, (...args) => event.execute(...args, activeCombats));
+    } else {
+        client.on(event.name, (...args) => event.execute(...args, activeCombats));
     }
-    //se a interação for um clique de botão
-    else if (interaction.isButton()) {
-        const userId = interaction.user.id
-        const combat = activeCombats.get(userId)
+}
 
-        // se não tiver uma batalha ativa para o usuario ele vai ignorar
-        if (!combat) {
-            await interaction.reply({content: "Esta batalha não esta mais ativa.", ephemeral: true})
-            return;
-        }
-        // botão atacar
-        if (interaction.customId === 'attack_button') {
-            const player = combat.playerData;
-            const monster = combat.monsterData;
-
-            // logica de dano (teste)
-            const damageDealt = player.attack_power;
-            monster.hit_points -= damageDealt;
-
-            const embed = new EmbedBuilder()
-                .setColor(0xFF0000)
-                .setTitle(`Batalha contra ${monster.name}!`)
-                .setDescription(`Você ataca o ${monster.name} e causa **${damageDealt}** de dano!\n\n HP do monstro **${monster.hit_points}**`)
-
-            // se o monstro foi derrotado
-            if (monster.hit_points <= 0) {
-                embed.setDescription(`Você derrotou o ${monster.name}!`)
-                activeCombats.delete(userId) // remove a batalha do mapa
-                //remove os botões de mensagem
-                await interaction.update({embeds: [embed], components: []});
-            } else {
-                // atualiza a mensagem com o hp atual do monstro
-                await interaction.update({embeds:[embed]});
-            }
-        }
-
-        //logica de fugir ( teste)
-        else if(interaction.customId ==='run_button') {
-            activeCombats.delete(userId);
-            await interaction.update({content: 'Você fugiu da batalha!', embeds: [], components:[]});
-        }
+// Carrega o cache de monstros ao iniciar o bot
+(async () => {
+    try {
+        await monsterCache(),
+        console.log('Cache de monstros carregado.');
+        client.login(process.env.bot_token);
+    } catch (error) {
+        console.error('Erro ao carregar o cache de monstros:', error);
     }
-});
-client.login(process.env.bot_token);
+})();

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from "discord.js";
-import fetchMonster from "../util/monsterFetcher.js";
+import {monsterPools} from "../util/monsterCache.js";
 import pool from "../database.js";
 
 
@@ -15,28 +15,30 @@ export default{
                     {name: 'Fácil', value: 'facil'},
                     {name: 'Médio', value: 'medio'},
                     {name: 'Difícil', value: 'dificil'},
+                    {name: 'Lendário', value: 'lendario'}
                 )
         ),
     async execute(interaction, activeCombats) {
         try{
-            const playercheck = await pool.query('SELECT * FROM players WHERE user_id=$1', [interaction.user.id])
+            const playercheck = await pool.query(
+                'SELECT user_id, level, current_xp, xp_next_level, attribute_points, coins, current_hp, max_hp, attack_power, defense, armor_class, crit_chance FROM players WHERE user_id = $1',
+                [interaction.user.id]
+            );
             if (playercheck.rowCount === 0) {
                 return interaction.reply('Você precisa criar um personagem para poder lutar!')
             }
 
             const difficulty = interaction.options.getString('dificuldade');
-            let monsterName;
 
-            // escolhe um monstro baseado na dificuldade
-            if (difficulty === 'facil') {
-                monsterName = 'goblin'; //teste inicial
-            } else if (difficulty === 'medio'){
-                monsterName = 'acolyte';
-            } else if(difficulty === 'dificil') {
-                monsterName = 'ancient-gold-dragon'
+            // seleciona um monstro aleatorio baseado na dificuldade
+            const monsterPool = monsterPools[difficulty];
+
+            if (!monsterPool || monsterPool.length === 0) {
+                return interaction.reply('Não há monstros disponíveis para essa dificuldade. Tente novamente mais tarde.');
             }
-            const monsterData = await fetchMonster(monsterName);
-            if (!monsterData){
+
+            const monsterData = monsterPool[Math.floor(Math.random() * monsterPool.length)];
+            if (!monsterData) {
                 return interaction.reply('Não foi possivel encontrar um monstro para a batalha. Tente novamente.')
             }
 
@@ -69,7 +71,7 @@ export default{
                 interaction: interaction // Guarda a interação original para poder editar depois
             });
             // Adiciona um coletor para remover os botões depois de um tempo
-            const collector = interaction.channel.createMessageComponentCollector({time: 60000});
+            const collector = interaction.channel.createMessageComponentCollector({time: 300000}); 
             collector.on('end', () => {
                 activeCombats.delete(interaction.user.id); // Limpa a batalha do mapa
             });
