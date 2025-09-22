@@ -59,7 +59,7 @@ export default {
                             player.max_hp += 5;
                             player.current_hp = player.max_hp; // restaura a vida ao subir de nivel
                             player.attack_power += 1;
-                            player.defense +=1;
+                            player.defense += 0;
                             player.attribute_points +=5
 
                             levelUpMessage += `\n\n🎉 Parabéns! Você subiu para o nível ${player.level}! Seus pontos de vida, ataque e defesa aumentaram. Você também ganhou 5 pontos de atributo para distribuir.`;
