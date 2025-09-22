@@ -38,14 +38,14 @@ export async function handleMonsterTurn(player, monster) {
         const diceString = monsterAttackAction.damage_dice || monsterAttackAction.damage?.[0]?.damage_dice;
         if (diceString) {
             const baseDamage = rollDice(diceString);
-            monsterDamage = Math.floor(baseDamage * (0.8 + Math.random() * 0.4));
+            monsterDamage = Math.floor(baseDamage * (0.8 + Math.random() * 0.4) * 1.5); // dano varia entre 80% e 120% e aumenta em 50% para balancear
         } else {
-            monsterDamage = Math.floor(monster.strength * (0.8 + Math.random() * 0.4)) || 5; // fallback se não tiver dano definido
+            monsterDamage = Math.floor(monster.strength * (0.8 + Math.random() * 0.4) * 1.5) || 5; // fallback se não tiver dano definido
         }
     }
     // Se não conseguiu calcular o dano pelo ataque, usa a força do monstro como base
     if (monsterDamage === 0) {
-        monsterDamage = Math.floor(monster.strength * (0.8 + Math.random() * 0.4)) || 5;
+        monsterDamage = Math.floor(monster.strength * (0.8 + Math.random() * 0.4) * 1.5) || 5;
     }
     // Garantir que monsterDamage não seja NaN
     if (isNaN(monsterDamage)) {

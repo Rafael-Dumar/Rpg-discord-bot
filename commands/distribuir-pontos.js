@@ -9,6 +9,7 @@ export default {
             option.setName('quantidade')
                 .setDescription('Quantidade de pontos você quer gastar')
                 .setRequired(true))
+                
         .addStringOption(option =>
             option.setName('status')
             .setDescription('o atributo que você quer aumentar')
@@ -31,6 +32,7 @@ export default {
                 return await interaction.reply({ content: 'Você ainda não tem um personagem.', ephemeral: true});
             }
             const availablePoints = playerCheck.rows[0].attribute_points;
+
             if ( amount <= 0){
                 return await interaction.reply({ content: 'Você deve distribuir pelo menos 1 ponto.', ephemeral: true});
             }

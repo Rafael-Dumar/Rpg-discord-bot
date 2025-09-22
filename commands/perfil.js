@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, Embed } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder} from "discord.js";
 import pool from "../database.js";
 
 export default {
@@ -20,9 +20,9 @@ export default {
                 .setTitle(`Perfil de ${interaction.user.username}`)
                 .setThumbnail(interaction.user.displayAvatarURL())
                 .addFields(
-                    {name: '📜 Nível', value: `**${playerdata.level}**`, inline: true},
+                    {name: '📜 Nível', value: `${playerdata.level}`, inline: true},
                     {name: '✨ XP', value: `${playerdata.current_xp} / ${playerdata.xp_next_level}`, inline: true},
-                    { name: '💰 Moedas', value: `**${playerdata.coins}**`, inline: true },
+                    { name: '💰 Moedas', value: `${playerdata.coins}`, inline: true },
                     { name: '❤️ HP (Vida)', value: `${playerdata.current_hp} / ${playerdata.max_hp}`, inline: false },
                     { name: '⚔️ Ataque', value: `${playerdata.attack_power}`, inline: true },
                     { name: '🛡️ Defesa', value: `${playerdata.defense}`, inline: true },

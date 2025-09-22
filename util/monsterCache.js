@@ -12,7 +12,7 @@ export const monsterPools = {
 export async function monsterCache() {
      try {
         console.log('Inicializando cache de monstros...');
-        let nextPage = 'https://api.open5e.com/monsters/?limit=300';
+        let nextPage = 'https://api.open5e.com/monsters/?limit=200';
         const allMonsters = [];
 
         // Loop para buscar todas as páginas de monstros da API

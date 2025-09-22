@@ -13,10 +13,10 @@ export default {
             // verifica se o jogador ja existe
             const playercheck = await pool.query('SELECT * FROM Players WHERE user_id = $1', [userId])
             if (playercheck.rowCount > 0) {
-                await interaction.reply('Você já tem um personagem criado!');
+                await interaction.reply({content: 'Você já tem um personagem criado!', ephemeral: true });
             } else {
                 await pool.query('INSERT INTO Players (user_id) VALUES ($1)', [userId]);
-                await interaction.reply('🎉 Personagem criado com sucesso! Use /perfil para ver seus status');
+                await interaction.reply({content: '🎉 Personagem criado com sucesso! Use /perfil para ver seus status', ephemeral: true});
             }
         }catch (err){
             console.log(err);
