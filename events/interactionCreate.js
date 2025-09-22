@@ -56,9 +56,9 @@ export default {
                             player.xp_next_level = Math.floor(player.xp_next_level * 1.75); // proximo nivel precisa de 50% mais para subir
 
                             // aumenta os status do jogador ao subir de nivel
-                            player.max_hp += 10;
+                            player.max_hp += 5;
                             player.current_hp = player.max_hp; // restaura a vida ao subir de nivel
-                            player.attack_power += 2;
+                            player.attack_power += 1;
                             player.defense +=1;
                             player.attribute_points +=5
 
