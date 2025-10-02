@@ -52,10 +52,10 @@ export async function handleMonsterTurn(player, monster) {
         console.error("monsterDamage resultou em NaN!", monster);
         const cr = monster.cr;
 
-        if (cr <= 1) monsterDamage = math.floor(5 * (0.8 + Math.random() * 0.4));
-        else if (cr <= 4) monsterDamage = math.floor(8 * (0.8 + Math.random() * 0.4));
-        else if (cr <= 9) monsterDamage = math.floor(15 * (0.8 + Math.random() * 0.4));
-        else monsterDamage = math.floor(25 * (0.8 + Math.random() * 0.4));
+        if (cr <= 1) monsterDamage = Math.floor(5 * (0.8 + Math.random() * 0.4));
+        else if (cr <= 4) monsterDamage = Math.floor(8 * (0.8 + Math.random() * 0.4));
+        else if (cr <= 9) monsterDamage = Math.floor(15 * (0.8 + Math.random() * 0.4));
+        else monsterDamage = Math.floor(25 * (0.8 + Math.random() * 0.4));
         
         console.log(`Novo dano de fallback calculado baseado no CR ${cr}: ${monsterDamage}`);
     }

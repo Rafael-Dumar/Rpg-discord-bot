@@ -21,6 +21,7 @@ const activeCombats = new Map();
 
 //CARREGADOR DE COMANDOS
 client.commands = new Collection();
+client.buttons = new Collection()
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const commandsPath = path.join(__dirname, 'commands');
@@ -47,6 +48,16 @@ for (const file of eventFiles) {
     } else {
         client.on(event.name, (...args) => event.execute(...args, activeCombats));
     }
+}
+
+//CARREGADOR DE BOTÕES
+const buttonsPath = path.join(__dirname, 'buttons');
+const buttonFiles = fs.readdirSync(buttonsPath).filter(file => file.endsWith('.js'));
+for (const file of buttonFiles) {
+    const filePath = path.join(buttonsPath, file);
+    const fileUrl = pathToFileURL(filePath);
+    const {default: button} = await import(fileUrl);
+    client.buttons.set(button.customId, button);
 }
 
 // Carrega o cache de monstros ao iniciar o bot
