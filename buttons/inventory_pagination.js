@@ -3,15 +3,16 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "disc
 
 const items_per_page = 5
 export default {
-    customId: 'shop_',
+    customId: 'inventory_',
     async execute(interaction) {
         try {
             const [_, action, pageStr] = interaction.customId.split('_');
             let currentPage = parseInt(pageStr)
 
             //busca os itens
-            const allItemsResult = await pool.query('SELECT * FROM items WHERE for_sale = true ORDER BY price ASC');
-            const allItems = allItemsResult.rows;
+            const inventoryResult = await pool.query(
+                'SELECT i.item_id, i.name, i.rarity, i.type, i.bonuses, i.description, inv.quantity FROM inventories inv JOIN items i ON inv.item_id = i.item_id WHERE inv.user_id = $1 ORDER BY i.name ASC', [interaction.user.id]);
+            const allItems = inventoryResult.rows;
             const totalPages = Math.ceil(allItems.length / items_per_page);
 
             //calcula a nova página
@@ -24,10 +25,10 @@ export default {
             //pega os itens da nova pagina
             const currentPageItems = allItems.slice(currentPage * items_per_page, (currentPage + 1)* items_per_page);
 
-            const shopEmbed = new EmbedBuilder()
-                .setColor(0x5865F2)
-                .setTitle('🛒 Loja do Aventureiro')
-                .setFooter({ text: `Página ${currentPage + 1} de ${totalPages}  | Use /comprar para comprar um item` });
+            const inventoryEmbed = new EmbedBuilder()
+                .setColor(0xCD853F)
+                .setTitle(`🎒 Inventário de ${interaction.user.username}`)
+                .setFooter({text: `Página ${currentPage+1} de ${totalPages} `});
             
             for (const item of currentPageItems) {
                 let bonusesText = '-';
@@ -40,31 +41,29 @@ export default {
                         return `${sign}${value} ${stat.replace('_', ' ')}`;
                     }).join('\n');
                 }
-
-                shopEmbed.addFields(
-                    {name: `🛍️ [${item.item_id}] ${item.name} (${item.rarity})`,value: '✨ Bônus / Efeito', inline: true},
-                    {name: '💰 Preço', value: `**${item.price}** moedas`, inline:true},
+                // adiciona o campo ao embed
+                inventoryEmbed.addFields(
+                    {name: `[${item.item_id}] ${item.name} (${item.rarity})`,value: '✨ Bônus / Efeito', inline: true},
+                    {name: 'Quantidade', value: `**${item.quantity}**`, inline:true},
                     {name: bonusesText, value: `\u200B`, inline:false}
-                    
-                );
-
+                );  
             }
 
             const newRow = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId(`shop_prev_${currentPage}`)
+                        .setCustomId(`inventory_prev_${currentPage}`)
                         .setLabel('⬅️ Anterior')
                         .setStyle(ButtonStyle.Secondary)
                         .setDisabled(currentPage === 0),
                     new ButtonBuilder()
-                        .setCustomId(`shop_next_${currentPage}`)
+                        .setCustomId(`inventory_next_${currentPage}`)
                         .setLabel('Próxima ➡️')
                         .setStyle(ButtonStyle.Primary)
                         .setDisabled(currentPage + 1 >= totalPages)
                 );
             
-            await interaction.update({embeds: [shopEmbed], components: [newRow]});
+            await interaction.update({embeds: [inventoryEmbed], components: [newRow]});
         
         } catch(err){
             console.error(err);

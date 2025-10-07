@@ -26,7 +26,7 @@ export default{
             const shopEmbed = new EmbedBuilder()
                 .setColor(0x5865F2)
                 .setTitle('🛒 Loja do Aventureiro')
-                .setFooter({text: `Página ${page+1} de ${totalPages}`});
+                .setFooter({text: `Página ${page+1} de ${totalPages}   | Use /comprar para comprar um item`});
             
             //campo para cada item da loja
             for (const item of currentPageItems) {

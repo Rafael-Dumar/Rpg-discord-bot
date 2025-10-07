@@ -69,6 +69,21 @@ export async function handleMonsterTurn(player, monster) {
     }
     // calcula o dano final considerando a defesa e armadura do jogador
     const totalDefense = player.defense + player.armor_class;
+    // escala o dano do monstro baseado na dificuldade da dungeon
+    let attackScale = 0;
+    const cr = monster.cr;
+    if (cr >= 0 && cr <= 1) {
+        attackScale = Math.floor(player.attack_power / 5);
+    } else if (cr > 1 && cr <= 4) {
+        attackScale = Math.floor(player.attack_power / 4);
+    } else if (cr > 4 && cr <= 9) { 
+        attackScale = Math.floor(player.attack_power / 3);
+    } else if (cr >= 10) {
+        attackScale = Math.floor(player.attack_power / 2);
+    }
+
+    monsterDamage += attackScale;
+
     const finalDamage = Math.max(1, Math.floor(monsterDamage - (totalDefense / 2)));
     player.current_hp -= finalDamage;
     // atualiza o hp do jogador no banco de dados

@@ -2,6 +2,7 @@ import { EmbedBuilder } from "discord.js";
 import pool from "../database.js";
 import { calculateXp } from "../util/xpFunction.js";
 import { handleMonsterTurn, handlePlayerTurn } from "../util/combatHelper.js";
+import { rollDice } from "../util/diceRoller.js";
 
 
 export default {
@@ -14,22 +15,26 @@ export default {
         // verifica se o monstro foi derrotado
         if (monster.hit_points <= 0){
             const xpGain = calculateXp(monster.cr) // se o monstro não tiver xp definido, calcula baseado no CR
-            const coinGain = Math.floor(xpGain/10); // ganha uma quantia de moedas baseada na xp + 1d10
+            const coinGain = Math.max(1, Math.floor(xpGain/10) + rollDice('1d4')); // ganha uma quantia de moedas baseada na xp + 1d10
             player.current_xp += xpGain;
             player.coins += coinGain;
             description = `Você derrotou o ${monster.name}!\n\n**Recompensas:**\n✨ **+${xpGain} XP**\n💰 **+${coinGain} Moedas**`;
             
             let levelUpMessage = '';
             // sistema de level
-            while (player.current_xp >= player.xp_to_next_level) {
+            while (player.current_xp >= player.xp_next_level) {
+                // sobe de level
+                const xpNeededForThisLevel = player.xp_next_level;
                 player.level += 1;
-                player.current_xp -= player.xp_to_next_level;
-                player.xp_to_next_level = Math.floor(player.xp_to_next_level * 1.75);
+                player.current_xp -= xpNeededForThisLevel;
+                player.xp_next_level = Math.floor(xpNeededForThisLevel * 1.75);
+
+                // aumenta os status do jogador a cada level
                 player.max_hp += 5;
                 player.current_hp = player.max_hp;
                 player.attack_power += 1;
                 player.attribute_points += 5;
-                levelUpMessage += `\n\n🎉 Parabéns! Você subiu para o nível ${player.level}! Seus pontos de vida, ataque e defesa aumentaram. Você também ganhou 5 pontos de atributo para distribuir.`
+                levelUpMessage += `\n\n🎉 Parabéns! Você subiu para o nível ${player.level}! Seus pontos de vida e ataque aumentaram. Você também ganhou 5 pontos de atributo para distribuir.`
             }
                 
             // atualiza os dados do jogador no banco de dados

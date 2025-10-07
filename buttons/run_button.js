@@ -33,7 +33,7 @@ export default {
                         )
                         .setTimestamp();
                         // finaliza a batalha
-                        activeCombats.delete(userId);
+                        activeCombats.delete(interaction.user.id);
                         await interaction.update({embeds: [defeatEmbed], components: []});
                         return;
                         }

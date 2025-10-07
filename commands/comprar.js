@@ -33,7 +33,7 @@ export default {
 
             if (itemResult.rowCount === 0) {
                 await client.query('ROLLBACK');
-                return interaction.reply({content: 'O item com ID \`${itemId}\` não foi encontrado na loja.', ephemeral: true});
+                return interaction.reply({content: `O item com ID \`${itemId}\` não foi encontrado na loja.`, ephemeral: true});
             }
 
             if (playerResult.rowCount === 0) {
