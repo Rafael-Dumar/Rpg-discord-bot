@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from "discord.js";
 import {monsterPools} from "../util/monsterCache.js";
 import pool from "../database.js";
-
+import { getEquippedBonuses } from "../util/equippedBonuses.js";
 
 export default{
     data: new SlashCommandBuilder()
@@ -20,14 +20,33 @@ export default{
         ),
     async execute(interaction, activeCombats) {
         try{
+            const userId = interaction.user.id;
             const playercheck = await pool.query(
                 'SELECT user_id, level, current_xp, xp_next_level, attribute_points, coins, current_hp, max_hp, attack_power, defense, armor_class, crit_chance FROM players WHERE user_id = $1',
-                [interaction.user.id]
+                [userId]
             );
             if (playercheck.rowCount === 0) {
                 return interaction.reply('Você precisa criar um personagem para poder lutar!')
             }
 
+            let playerData = playercheck.rows[0];
+            // busca os itens equipados
+            const equippedItemsResult = await pool.query(
+                'SELECT i.bonuses FROM equipped_items ei JOIN inventories inv ON ei.inventory_id = inv.inventory_id JOIN items i ON inv.item_id = i.item_id WHERE ei.player_id = $1', [userId]
+            )
+            const bonuses = await getEquippedBonuses(userId, pool);
+            
+            // Aplica os bônus dos itens equipados
+            if (equippedItemsResult.rowCount > 0) {
+                const combatPlayerData = { ...playerData}; // Cria uma cópia dos dados do jogador para a batalha
+                for (const [stat, value] of Object.entries(bonuses)) {
+                    if (combatPlayerData.hasOwnProperty(stat)) {
+                        combatPlayerData[stat] += value;
+                    }
+                }   
+                playerData = combatPlayerData; // Usa os dados modificados para a batalha
+            }
+            
             const difficulty = interaction.options.getString('dificuldade');
 
             // seleciona um monstro aleatorio baseado na dificuldade
@@ -66,7 +85,7 @@ export default{
 
             //salva os dados da batalha no mapa, usando o id do usuario
             activeCombats.set(interaction.user.id, {
-                playerData: playercheck.rows[0],
+                playerData: playerData,
                 monsterData: monsterData,
                 interaction: interaction // Guarda a interação original para poder editar depois
             });

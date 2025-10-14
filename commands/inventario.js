@@ -16,11 +16,15 @@ export default{
             }
             // pega os itens do inventario
             const inventoryResult = await pool.query(
-                'SELECT i.item_id, i.name, i.rarity, i.type, i.bonuses, i.description, inv.quantity FROM inventories inv JOIN items i ON inv.item_id = i.item_id WHERE inv.user_id = $1 ORDER BY i.name ASC', [userId]);
+                'SELECT inv.inventory_id, i.item_id, i.name, i.rarity, i.type, i.bonuses, i.description, inv.quantity FROM inventories inv JOIN items i ON inv.item_id = i.item_id WHERE inv.user_id = $1 ORDER BY i.name ASC', [userId]);
             
             if (inventoryResult.rowCount === 0) {
                 return interaction.reply({content: '🎒 Sua mochila está vazia.', ephemeral: true});
             }
+
+            const equippedResult = await pool.query('SELECT inventory_id FROM equipped_items WHERE player_id = $1', [userId]);
+            // ids dos itens equipados
+            const equippedID = new Set(equippedResult.rows.map(row => row.inventory_id));
             // itens do inventario
             const allItems = inventoryResult.rows;
             // paginação
@@ -32,10 +36,14 @@ export default{
             const inventoryEmbed = new EmbedBuilder()
                 .setColor(0xCD853F)
                 .setTitle(`🎒 Inventário de ${interaction.user.username}`)
-                .setFooter({text: `Página ${page+1} de ${totalPages} `});
+                .setFooter({text: `Página ${page+1} de ${totalPages} | Use /equipar ou /desequipar para gerenciar seus itens`});
             
             // adiciona um campo para cada item
             for (const item of currentPageItems) {
+                // verifica se o item está equipado
+                const isEquipped = equippedID.has(item.inventory_id);
+                // se estiver equipado, adiciona um emoji
+                const equippedEmoji = isEquipped ? '✅ ' : '';
                 let bonusesText = '-';
                 if (item.type === 'potion') {
                     bonusesText = item.description;
@@ -46,9 +54,10 @@ export default{
                         return `${sign}${value} ${stat.replace('_', ' ')}`;
                     }).join('\n');
                 }
+
                 // adiciona o campo ao embed
                 inventoryEmbed.addFields(
-                    {name: `[${item.item_id}] ${item.name} (${item.rarity})`,value: '✨ Bônus / Efeito', inline: true},
+                    {name: `${equippedEmoji}[${item.item_id}] ${item.name} (${item.rarity})`,value: '✨ Bônus / Efeito', inline: true},
                     {name: 'Quantidade', value: `**${item.quantity}**`, inline:true},
                     {name: bonusesText, value: `\u200B`, inline:false}
                 );  

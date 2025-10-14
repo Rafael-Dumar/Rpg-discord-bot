@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import pool from "../database.js";
+import { getEquippedBonuses } from "../util/equippedBonuses.js";
 
 export default {
     data: new SlashCommandBuilder()
@@ -12,7 +13,7 @@ export default {
         try {
             // Verifica se o jogador existe e busca seus atributos
             const playerCheck = await pool.query(
-                'SELECT attack_power, defense, crit_chance, attribute_points FROM players WHERE user_id = $1',
+                'SELECT max_hp, attack_power, defense, crit_chance, attribute_points FROM players WHERE user_id = $1',
                 [userId]
             );
 
@@ -21,6 +22,11 @@ export default {
             }
 
             const player = playerCheck.rows[0];
+            const bonuses = await getEquippedBonuses(userId, pool);
+            // Aplica os bônus dos itens equipados
+            const formatStat = (base, bonus) => {
+                return bonus > 0 ? `**${base}** + **${bonus}**` : `**${base}**`;
+            }
 
             // Criamos o embed focado na evolução do personagem
             const attributesEmbed = new EmbedBuilder()
@@ -28,9 +34,10 @@ export default {
                 .setTitle(`✨ Atributos de ${interaction.user.username} ✨`)
                 .setDescription(`Você tem **${player.attribute_points}** pontos para distribuir.`)
                 .addFields(
-                    { name: '⚔️ Ataque', value: `**${player.attack_power}**`, inline: true },
-                    { name: '🛡️ Defesa', value: `**${player.defense}**`, inline: true },
-                    { name: '💥 Crítico', value: `**${player.crit_chance}** Pontos`, inline: true }
+                    { name: '❤️ HP (Vida)', value: formatStat(player.max_hp, bonuses.max_hp), inline: false},
+                    { name: '⚔️ Ataque', value: formatStat(player.attack_power, bonuses.attack_power), inline: true },
+                    { name: '🛡️ Defesa', value: formatStat(player.defense, bonuses.defense), inline: true },
+                    { name: '💥 Crítico', value: formatStat(player.crit_chance, bonuses.crit_chance), inline: true }
                 )
                 .setFooter({ text: 'Use /distribuir-pontos para ficar mais forte!' });
 

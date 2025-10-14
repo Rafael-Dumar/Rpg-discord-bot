@@ -6,7 +6,7 @@ export function rollDice(diceString){
 
     const numDice = parseInt(match[1]);
     const numSides = parseInt(match[2]);
-    const bonus = parseInt(match[3]);
+    const bonus = parseInt(match[3]) || 0;
 
     let total = 0;
     for(let i = 0; i<numDice; i++){

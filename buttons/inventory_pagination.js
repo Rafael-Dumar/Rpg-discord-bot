@@ -11,9 +11,13 @@ export default {
 
             //busca os itens
             const inventoryResult = await pool.query(
-                'SELECT i.item_id, i.name, i.rarity, i.type, i.bonuses, i.description, inv.quantity FROM inventories inv JOIN items i ON inv.item_id = i.item_id WHERE inv.user_id = $1 ORDER BY i.name ASC', [interaction.user.id]);
+                'SELECT inv.inventory_id, i.item_id, i.name, i.rarity, i.type, i.bonuses, i.description, inv.quantity FROM inventories inv JOIN items i ON inv.item_id = i.item_id WHERE inv.user_id = $1 ORDER BY i.name ASC', [interaction.user.id]);
+            
             const allItems = inventoryResult.rows;
             const totalPages = Math.ceil(allItems.length / items_per_page);
+            // pega os itens equipados
+            const equippedResult = await pool.query('SELECT inventory_id FROM equipped_items WHERE player_id = $1', [interaction.user.id]);
+            const equippedId = new Set(equippedResult.rows.map(row => row.inventory_id));
 
             //calcula a nova página
             if (action === 'next') {
@@ -28,9 +32,11 @@ export default {
             const inventoryEmbed = new EmbedBuilder()
                 .setColor(0xCD853F)
                 .setTitle(`🎒 Inventário de ${interaction.user.username}`)
-                .setFooter({text: `Página ${currentPage+1} de ${totalPages} `});
+                .setFooter({text: `Página ${currentPage+1} de ${totalPages} | Use /equipar ou /desequipar para gerenciar seus itens`});
             
             for (const item of currentPageItems) {
+                const isEquipped = equippedId.has(item.inventory_id);
+                const equippedEmoji = isEquipped ? '✅ ' : '';
                 let bonusesText = '-';
                 if (item.type === 'potion') {
                     bonusesText = item.description;
@@ -43,7 +49,7 @@ export default {
                 }
                 // adiciona o campo ao embed
                 inventoryEmbed.addFields(
-                    {name: `[${item.item_id}] ${item.name} (${item.rarity})`,value: '✨ Bônus / Efeito', inline: true},
+                    {name: `${equippedEmoji}[${item.item_id}] ${item.name} (${item.rarity})`,value: '✨ Bônus / Efeito', inline: true},
                     {name: 'Quantidade', value: `**${item.quantity}**`, inline:true},
                     {name: bonusesText, value: `\u200B`, inline:false}
                 );  

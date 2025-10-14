@@ -1,7 +1,7 @@
 import { rollDice } from "./diceRoller.js";
 import pool from "../database.js";
 
-export async function handlePlayerTurn(player, monster) {
+export function handlePlayerTurn(player, monster) {
     // Lógica do turno do jogador
     let turnDescription = '';
     // logica de dano do jogador
