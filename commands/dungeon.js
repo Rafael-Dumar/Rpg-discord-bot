@@ -70,9 +70,15 @@ export default{
                         .setStyle(ButtonStyle.Danger)
                         .setEmoji('⚔️'),
                     new ButtonBuilder()
+                        .setCustomId('item_button')
+                        .setLabel('Usar Item')
+                        .setStyle(ButtonStyle.Primary)
+                        .setEmoji('🧪'),
+                    new ButtonBuilder()
                         .setCustomId('run_button')
                         .setLabel('Fugir')
                         .setStyle(ButtonStyle.Secondary)
+                
                 );
             
             // cria o embed para monstrar o monstro

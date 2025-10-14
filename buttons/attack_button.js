@@ -21,7 +21,7 @@ export default {
             const coinGain = Math.max(1, Math.floor(xpGain/10) + rollDice('1d10')); // ganha uma quantia de moedas baseada na xp + 1d10
             player.current_xp += xpGain;
             player.coins += coinGain;
-            description = `Você derrotou o ${monster.name}!\n\n**Recompensas:**\n✨ **+${xpGain} XP**\n\n💰 **+${coinGain} Moedas**`;
+            description = `Você derrotou o ${monster.name}!\n\n**Recompensas:**\n✨ **+${xpGain} XP**\n💰 **+${coinGain} Moedas**`;
 
             // chance de loot baseado no CR do monstro
             const globalChance = monster.cr <= 1 ? 20 : monster.cr <= 4 ? 35 : monster.cr <= 9 ? 50 : 70;
@@ -40,7 +40,7 @@ export default {
                         // se não tem, adiciona um novo item ao inventario
                         await pool.query('INSERT INTO inventories (user_id, item_id, quantity) VALUES ($1, $2, $3)', [player.user_id, droppedItem.item_id, 1]);
                     }
-                    description += `\n\n🎁 **${droppedItem.name} (${droppedItem.rarity})** foi adicionado ao seu inventário!`;
+                    description += `\n🎁 **${droppedItem.name} (${droppedItem.rarity})** foi adicionado ao seu inventário!`;
                 }
             }
 

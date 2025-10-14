@@ -1,4 +1,5 @@
 import {Events, EmbedBuilder} from 'discord.js'
+import pool from '../database.js';
 
 export default {
     name: Events.InteractionCreate,
@@ -44,9 +45,21 @@ export default {
                     }
                 }
 
+            }
+            //se a interação for uma seleção de menu
+            else if (interaction.isStringSelectMenu()) {
+                //teste
+                if(interaction.customId === 'select_potion') {
+                    const selectedInventoryId = interaction.values[0];
 
+                    const itemInfo = await pool.query(
+                        `SELECT i.name FROM inventories inv JOIN items i ON inv.item_id = i.item_id WHERE inv.inventory_id = $1`, [selectedInventoryId]
+                    );
+                    const itemName = itemInfo.rows[0].name;
 
-          
+                    // teste de confirmação
+                    await interaction.update({content: `Você usou a poção **${itemName}**!`, components: []});
+                }
             }
 
     },
