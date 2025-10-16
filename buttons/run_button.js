@@ -1,6 +1,7 @@
 import pool from "../database.js";
 import { EmbedBuilder } from "discord.js";
 import { handleMonsterTurn } from "../util/combatHelper.js";
+import { reviveHelper } from "../util/reviveHelper.js";
 
 export default {
     customId: 'run_button',
@@ -22,24 +23,8 @@ export default {
                         const embed = new EmbedBuilder().setColor(0xFF0000).setTitle(`Fuga Falhou!`).setDescription(description);
                         // verifica se o jogador foi derrotado
                         if (player.current_hp <= 0) {
-                            //penalidade -> perde 10% das moedas
-                        const lostCoins = Math.ceil(player.coins * 0.1);
-                        const finalCoins = Math.max(0, player.coins - lostCoins);
-
-                        await pool.query('UPDATE players SET current_hp = 0, coins = $1 WHERE user_id = $2', [finalCoins, player.user_id])
-
-                        const defeatEmbed = new EmbedBuilder().setColor(0x2b2d31).setTitle('💀 Você foi Derrotado.. 💀')
-                        .setDescription(`Você lutou bravamente, mas infelizmente foi derrotado pelo ${monster.name}..`)
-                        .addFields(
-                            { name: 'Ultima Rodada', value: description},
-                            { name: 'Penalidade', value: `Você perdeu **${lostCoins}** moedas na derrota.` },
-                            { name: 'Dica', value: 'Use `/descansar` para recuperar suas forças e lutar novamente.'}
-                        )
-                        .setTimestamp();
-                        // finaliza a batalha
-                        activeCombats.delete(interaction.user.id);
-                        await interaction.update({embeds: [defeatEmbed], components: []});
-                        return;
+                            return await reviveHelper(interaction, player, monster, description, activeCombats);
+                       
                         }
 
                         await interaction.update({embeds: [embed]});

@@ -26,7 +26,7 @@ export default{
                 [userId]
             );
             if (playercheck.rowCount === 0) {
-                return interaction.reply('Você precisa criar um personagem para poder lutar!')
+                return interaction.reply({content:'Você precisa criar um personagem para poder lutar!', ephemeral: true})
             }
 
             let playerData = playercheck.rows[0];
@@ -38,13 +38,13 @@ export default{
             
             // Aplica os bônus dos itens equipados
             if (equippedItemsResult.rowCount > 0) {
-                const combatPlayerData = { ...playerData}; // Cria uma cópia dos dados do jogador para a batalha
+                const combatPlayerData = { ...playerData}; // cópia dos dados do jogador para a batalha
                 for (const [stat, value] of Object.entries(bonuses)) {
                     if (combatPlayerData.hasOwnProperty(stat)) {
                         combatPlayerData[stat] += value;
                     }
                 }   
-                playerData = combatPlayerData; // Usa os dados modificados para a batalha
+                playerData = combatPlayerData; // usa os dados modificados para a batalha
             }
             
             const difficulty = interaction.options.getString('dificuldade');
