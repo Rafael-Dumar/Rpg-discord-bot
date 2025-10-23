@@ -14,16 +14,12 @@ export default {
         let description = '';
         // multi-ataque/turno
         let numberOfAttacks = 1;
-        let skipMonsterTurn = false;
         // verifica os buffs se houver
         if(combat.playerBuff) {
             if(combat.playerBuff.type === 'DOUBLE_ATTACK') {
                 numberOfAttacks = 2;
             } else if(combat.playerBuff.type === 'TRIPLE_ATTACK') {
                 numberOfAttacks = 3;
-            } else if(combat.playerBuff.type === 'TRIPLE_TURN') {
-                numberOfAttacks = 1;
-                skipMonsterTurn = true;
             }
         }
         //turno do jogador
@@ -104,13 +100,9 @@ export default {
         }
 
         // turno do monstro
-        if (skipMonsterTurn) {
-            description += `\n\n⏳ Graças à sua poção, o ${monster.name} não pode contra-atacar neste turno!`;
-        } else {
-            description += await handleMonsterTurn(player, monster, pool, combat)
-        }
+        description += await handleMonsterTurn(player, monster, pool, combat)
+        
        
-
         // verifica se o jogador foi derrotado
         if (player.current_hp <= 0) {
             return await reviveHelper(interaction, player, monster, description, activeCombats);

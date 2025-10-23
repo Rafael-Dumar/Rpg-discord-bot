@@ -3,7 +3,7 @@ import pool from "../database.js";
 
 export default {
     customId: 'item_button',
-    async execute(interaction, combat) {
+    async execute(interaction) {
         const userId = interaction.user.id;
 
         // busca os itens tipo 'potion' no inventario do jogador

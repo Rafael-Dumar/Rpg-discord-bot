@@ -50,13 +50,13 @@ export default{
             let hpBonus = 0;
             const cr = monster.cr;
             if (cr <= 1) { // Fácil
-                hpBonus = Math.floor(playerBase.max_hp * 0.10); // +10% do HP do jogador
+                hpBonus = Math.floor(playerBase.max_hp * 0.05); // +5% do HP do jogador
             } else if (cr <= 4) { // Médio
-                hpBonus = Math.floor(playerBase.max_hp * 0.2); // +20%
+                hpBonus = Math.floor(playerBase.max_hp * 0.10); // +10%
             } else if (cr <= 9) { // Difícil
-                hpBonus = Math.floor(playerBase.max_hp * 0.35); // +35%
+                hpBonus = Math.floor(playerBase.max_hp * 0.25); // +25%
             } else if (cr >= 10) { // Lendário
-                hpBonus = Math.floor(playerBase.max_hp * 0.6); // +60%
+                hpBonus = Math.floor(playerBase.max_hp * 0.5); // +50%
             }
 
             // 3. Aplica o bônus ao HP do monstro (garante pelo menos o HP original)

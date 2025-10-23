@@ -111,7 +111,8 @@ export default {
                                 break;
                             case 'GUARANTEED_FLEE':
                                 activeCombats.delete(interaction.user.id);
-                                await interaction.update({content: 'Você usou a poção e fugiu da batalha!', embeds: [], components:[]});
+                                await client.query('COMMIT');
+                                await combat.interaction.update({content: 'Você usou a poção e fugiu da batalha!', embeds: [], components:[]});
                                 return;
                             case 'DOUBLE_ATTACK':
                                 combat.playerBuff = { type: 'DOUBLE_ATTACK', duration: potion.effect_duration};
@@ -136,10 +137,6 @@ export default {
                             case 'FULL_HEAL':
                                 player.current_hp = player.max_hp;
                                 description += `\n❤️ Você recuperou todo o seu HP!`;
-                                break;
-                            case 'TRIPLE_TURN':
-                                combat.playerBuff = { type: 'TRIPLE_TURN', duration: potion.effect_duration};
-                                description += `\n⏳ Você terá três turnos consecutivos por **${potion.effect_duration} turnos**!`
                                 break;
                             case 'ETHEREAL':
                                 combat.playerBuff = { type: 'ETHEREAL', duration: potion.effect_duration};
