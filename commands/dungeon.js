@@ -29,23 +29,7 @@ export default{
                 return interaction.reply({content:'Você precisa criar um personagem para poder lutar!', ephemeral: true})
             }
 
-            let playerData = playercheck.rows[0];
-            // busca os itens equipados
-            const equippedItemsResult = await pool.query(
-                'SELECT i.bonuses FROM equipped_items ei JOIN inventories inv ON ei.inventory_id = inv.inventory_id JOIN items i ON inv.item_id = i.item_id WHERE ei.player_id = $1', [userId]
-            )
-            const bonuses = await getEquippedBonuses(userId, pool);
-            
-            // Aplica os bônus dos itens equipados
-            if (equippedItemsResult.rowCount > 0) {
-                const combatPlayerData = { ...playerData}; // cópia dos dados do jogador para a batalha
-                for (const [stat, value] of Object.entries(bonuses)) {
-                    if (combatPlayerData.hasOwnProperty(stat)) {
-                        combatPlayerData[stat] += value;
-                    }
-                }   
-                playerData = combatPlayerData; // usa os dados modificados para a batalha
-            }
+            let playerBase = playercheck.rows[0];
             
             const difficulty = interaction.options.getString('dificuldade');
 
@@ -59,6 +43,31 @@ export default{
             const monsterData = monsterPool[Math.floor(Math.random() * monsterPool.length)];
             if (!monsterData) {
                 return interaction.reply('Não foi possivel encontrar um monstro para a batalha. Tente novamente.')
+            }
+
+            const monster = {...monsterData};
+            // 2. Define o bônus de HP baseado no HP máximo do jogador e no CR do monstro
+            let hpBonus = 0;
+            const cr = monster.cr;
+            if (cr <= 1) { // Fácil
+                hpBonus = Math.floor(playerBase.max_hp * 0.10); // +10% do HP do jogador
+            } else if (cr <= 4) { // Médio
+                hpBonus = Math.floor(playerBase.max_hp * 0.2); // +20%
+            } else if (cr <= 9) { // Difícil
+                hpBonus = Math.floor(playerBase.max_hp * 0.35); // +35%
+            } else if (cr >= 10) { // Lendário
+                hpBonus = Math.floor(playerBase.max_hp * 0.6); // +60%
+            }
+
+            // 3. Aplica o bônus ao HP do monstro (garante pelo menos o HP original)
+            monster.hit_points = Math.max(monster.hit_points, monster.hit_points + hpBonus);
+
+            const playerBattle = {...playerBase};
+            const bonuses = await getEquippedBonuses(userId, pool);
+            for (const [stat, value] of Object.entries(bonuses)) {
+                if (playerBattle.hasOwnProperty(stat)) {
+                playerBattle[stat] += value;
+                }
             }
 
             //cria os botões de ação
@@ -84,19 +93,24 @@ export default{
             // cria o embed para monstrar o monstro
             const monsterembed = new EmbedBuilder()
                 .setColor(0xFF0000)
-                .setTitle(`Um ${monsterData.name} selvagem apareceu!`)
-                .setDescription(`HP: ${monsterData.hit_points}`)
+                .setTitle(`Um ${monster.name} selvagem apareceu!`)
+                .setDescription(`HP: ${monster.hit_points}`)
                 .setFooter({text: 'O que você faz?'});
             await interaction.reply({embeds: [monsterembed], components: [row]});
 
             //salva os dados da batalha no mapa, usando o id do usuario
             activeCombats.set(interaction.user.id, {
-                playerData: playerData,
-                monsterData: monsterData,
-                interaction: interaction // Guarda a interação original para poder editar depois
+                playerBattle: playerBattle, //dados com bonus aplicados
+                playerData:playerBase, // dados base do jogador
+                monsterData: monster,
+                interaction: interaction, // Guarda a interação original para poder editar depois
+                bonusesApplied: true
             });
             // Adiciona um coletor para remover os botões depois de um tempo
-            const collector = interaction.channel.createMessageComponentCollector({time: 300000}); 
+            const collector = interaction.channel.createMessageComponentCollector({time: 300000});
+            collector.on('collect', () => {
+                collector.resetTimer();
+            });
             collector.on('end', () => {
                 activeCombats.delete(interaction.user.id); // Limpa a batalha do mapa
             });

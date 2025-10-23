@@ -52,7 +52,7 @@ export default {
             await client.query('INSERT INTO equipped_items (player_id, inventory_id) VALUES ($1, $2)', [userId, inventoryId]);
             await client.query('COMMIT');
             const itemtypeEmoji = itemToEquip.type === 'weapon' ? '🗡️' : itemToEquip.type === 'armor' ? '🛡️' : '💍';
-            return interaction.reply({content: `Você equipou o item ${itemtypeEmoji} **${itemToEquip.name}** com sucesso!`, ephemeral: false});
+            return interaction.reply({content: `Você equipou o item ${itemtypeEmoji} **${itemToEquip.name}** com sucesso!`, ephemeral: true});
         } catch (err) {
             await client.query('ROLLBACK');
             console.error(err);

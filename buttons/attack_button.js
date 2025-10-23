@@ -9,9 +9,36 @@ import { reviveHelper } from "../util/reviveHelper.js";
 export default {
     customId: 'attack_button',
     async execute(interaction, combat) {
-        const { playerData: player, monsterData: monster, activeCombats } = combat;
+        const { playerData: player, playerBattle, monsterData: monster, activeCombats } = combat;
         // logica do turno do jogador
-        let description = handlePlayerTurn(player, monster);
+        let description = '';
+        // multi-ataque/turno
+        let numberOfAttacks = 1;
+        let skipMonsterTurn = false;
+        // verifica os buffs se houver
+        if(combat.playerBuff) {
+            if(combat.playerBuff.type === 'DOUBLE_ATTACK') {
+                numberOfAttacks = 2;
+            } else if(combat.playerBuff.type === 'TRIPLE_ATTACK') {
+                numberOfAttacks = 3;
+            } else if(combat.playerBuff.type === 'TRIPLE_TURN') {
+                numberOfAttacks = 1;
+                skipMonsterTurn = true;
+            }
+        }
+        //turno do jogador
+        for (let i = 0; i < numberOfAttacks; i++) {
+            if (numberOfAttacks > 1) {
+                description += `\n\n**Ataque ${i + 1} de ${numberOfAttacks}:**`
+            }
+
+            description += handlePlayerTurn(playerBattle, monster, combat);
+            // verifica se o monstro foi derrotado no meio do loop
+            if(monster.hit_points <= 0) {
+                break;
+            }
+        }
+        
         // verifica se o monstro foi derrotado
         if (monster.hit_points <= 0){
             const xpGain = calculateXp(monster.cr) // se o monstro não tiver xp definido, calcula baseado no CR
@@ -75,13 +102,27 @@ export default {
             }
             return;
         }
+
         // turno do monstro
-        description += await handleMonsterTurn(player, monster, pool)
+        if (skipMonsterTurn) {
+            description += `\n\n⏳ Graças à sua poção, o ${monster.name} não pode contra-atacar neste turno!`;
+        } else {
+            description += await handleMonsterTurn(player, monster, pool, combat)
+        }
+       
 
         // verifica se o jogador foi derrotado
         if (player.current_hp <= 0) {
             return await reviveHelper(interaction, player, monster, description, activeCombats);
             
+        }
+
+        //diminui a duração do buff ao passar do turno
+        if (combat.playerBuff && combat.playerBuff.duration != null) {
+            combat.playerBuff.duration -= 1;
+            if (combat.playerBuff.duration <= 0) {
+                combat.playerBuff = null; 
+            }
         }
 
         // atualiza o estado da batalha

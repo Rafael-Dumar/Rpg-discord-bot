@@ -47,7 +47,7 @@ export default {
             // verifica se o jogador tem moedas suficientes
             if (player.coins < totalCost) {
                 await client.query('ROLLBACK');
-                return interaction.reply({content: 'Você não tem moedas suficientes! Você precisa de **${totalCost}** moedas, mas só tem **${player.coins}**.', ephemeral: true});
+                return interaction.reply({content: `Você não tem moedas suficientes! Você precisa de **${totalCost}** moedas, mas só tem **${player.coins}**.`, ephemeral: true});
             }
             // subtrai as moedas do jogador
             await client.query('UPDATE players SET coins = coins - $1 WHERE user_id = $2', [totalCost, userId]);

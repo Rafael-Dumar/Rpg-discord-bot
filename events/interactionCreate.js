@@ -1,5 +1,6 @@
 import {Events, EmbedBuilder} from 'discord.js'
 import pool from '../database.js';
+import { handleMonsterTurn } from '../util/combatHelper.js';
 
 export default {
     name: Events.InteractionCreate,
@@ -49,7 +50,12 @@ export default {
                 //se um botão foi encontrado
                 if (button) {
                     try{
-                        await button.execute(interaction, {...combat, activeCombats});
+                        if(combat) {
+                            combat.activeCombats = activeCombats;
+                            await button.execute(interaction, combat);
+                        } else {
+                            await button.execute(interaction);
+                        }
                     } catch(err) {
                         console.error(`Erro ao executar o botão ${interaction.customId}:`, err);
                     }
@@ -63,12 +69,12 @@ export default {
                     const selectedInventoryId = interaction.values[0];
                     const userId = interaction.user.id;
                     const combat = activeCombats.get(userId);
-                    
-                    const { playerData: player, monsterData: monster} = combat
-                    // garante que o player certo esta interagindo
+
                     if (!combat || !combat.playerData) {
                         return interaction.reply({ content: "Você não está em uma batalha ou ela já terminou.", ephemeral: true });
                     }
+                    const { playerData: player, monsterData: monster} = combat
+                    // garante que o player certo esta interagindo
                     const client = await pool.connect();
                     try{
                         await client.query('BEGIN');
@@ -79,7 +85,7 @@ export default {
                         const potion = potionResult.rows[0];
 
                         await client.query('UPDATE inventories SET quantity = quantity - 1 WHERE inventory_id = $1', [selectedInventoryId]);
-
+                        await client.query('DELETE FROM inventories WHERE inventory_id = $1 AND quantity <= 0', [selectedInventoryId])
                         let description = `🧪 Você usou **${potion.name}**!`;
 
                         switch(potion.effect_type) {
@@ -106,7 +112,7 @@ export default {
                             case 'GUARANTEED_FLEE':
                                 activeCombats.delete(interaction.user.id);
                                 await interaction.update({content: 'Você usou a poção e fugiu da batalha!', embeds: [], components:[]});
-                                break;
+                                return;
                             case 'DOUBLE_ATTACK':
                                 combat.playerBuff = { type: 'DOUBLE_ATTACK', duration: potion.effect_duration};
                                 description += `\n⚡ Você poderá atacar duas vezes por **${potion.effect_duration} turnos**!`
@@ -131,10 +137,6 @@ export default {
                                 player.current_hp = player.max_hp;
                                 description += `\n❤️ Você recuperou todo o seu HP!`;
                                 break;
-                            case 'PERMANENT_BOOST':
-                                combat.playerBuff = { type: 'PERMANENT_BOOST', duration: null, value: potion.effect_value};
-                                description += `\n⭐ Você recebeu um aumento permanente no seu poder!`
-                                break;
                             case 'TRIPLE_TURN':
                                 combat.playerBuff = { type: 'TRIPLE_TURN', duration: potion.effect_duration};
                                 description += `\n⏳ Você terá três turnos consecutivos por **${potion.effect_duration} turnos**!`
@@ -151,7 +153,7 @@ export default {
                         }
 
                         // turno do monstro
-                        description += await handleMonsterTurn(player, monster, client)
+                        description += await handleMonsterTurn(player, monster, client, combat)
 
                         await client.query('COMMIT');
 
@@ -160,7 +162,6 @@ export default {
                             const finalCoins = Math.max(0, player.coins - lostCoins);
 
                             await pool.query('UPDATE players SET current_hp = 0, coins = $1 WHERE user_id = $2', [finalCoins, player.user_id])
-
                             const defeatEmbed = new EmbedBuilder().setColor(0x2b2d31).setTitle('💀 Você foi Derrotado.. 💀')
                             .setDescription(`Você lutou bravamente, mas infelizmente foi derrotado pelo ${monster.name}..`)
                             .addFields(
@@ -173,6 +174,13 @@ export default {
                             activeCombats.delete(interaction.user.id);
                             await interaction.update({embeds: [defeatEmbed], components: []});
                             return;
+                        }
+
+                        if (combat.playerBuff && combat.playerBuff.duration != null && ['ETHEREAL' || 'DEFENSE_BOOST' || 'INVULNERABILITY' || 'ARMOR_BOOST'].includes(combat.playerBuff.type) ){
+                            combat.playerBuff.duration -= 1;
+                            if (combat.playerBuff.duration <= 0) {
+                                combat.playerBuff = null; 
+                            }
                         }
 
                         const embed = new EmbedBuilder()
